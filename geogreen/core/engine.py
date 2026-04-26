@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import math
+
+import numpy as np
+
 from geogreen.core.data_fetcher import fetch_satellite_data, get_bbox
 from geogreen.core.processing import (
     classify_land,
@@ -10,6 +14,23 @@ from geogreen.core.processing import (
     segment_vegetation,
 )
 from geogreen.core.schemas import CityAnalysisResult
+
+
+def _stitch_tiles(classified_tiles: list[np.ndarray], tile_size: int = 256) -> np.ndarray:
+    if not classified_tiles:
+        raise ValueError("No tiles generated for classification")
+
+    grid_size = int(math.sqrt(len(classified_tiles)))
+    if grid_size * grid_size != len(classified_tiles):
+        raise ValueError("Tile count is not a square grid; cannot stitch map")
+
+    rows = []
+    idx = 0
+    for _ in range(grid_size):
+        row_tiles = classified_tiles[idx : idx + grid_size]
+        rows.append(np.hstack(row_tiles))
+        idx += grid_size
+    return np.vstack(rows)
 
 
 def get_city_analysis(city_name: str) -> CityAnalysisResult:
@@ -23,16 +44,7 @@ def get_city_analysis(city_name: str) -> CityAnalysisResult:
         vegetation_mask = segment_vegetation(ndvi)
         classified_tiles.append(classify_land(tile, vegetation_mask))
 
-    import numpy as np
-
-    classified_map = np.block(
-        [
-            [classified_tiles[0], classified_tiles[1], classified_tiles[2], classified_tiles[3]],
-            [classified_tiles[4], classified_tiles[5], classified_tiles[6], classified_tiles[7]],
-            [classified_tiles[8], classified_tiles[9], classified_tiles[10], classified_tiles[11]],
-            [classified_tiles[12], classified_tiles[13], classified_tiles[14], classified_tiles[15]],
-        ]
-    )
+    classified_map = _stitch_tiles(classified_tiles)
 
     tree_density = estimate_tree_density(classified_map)
     kpis = compute_kpis(tree_density, classified_map)

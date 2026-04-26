@@ -7,11 +7,11 @@ GeoGreen is an **AI-powered environmental intelligence platform** for on-demand 
 - Tree density estimation
 - Land classification (trees, cropland, urban, barren)
 - Environmental KPI generation
-- API-first architecture with FastAPI
+- API + interactive UI dashboard (same FastAPI app)
 
 ## Architecture
 ```
-Frontend Dashboard
+Frontend Dashboard (served at /)
   ↓
 FastAPI API Layer
   ↓
@@ -24,7 +24,7 @@ Core Engine
   └── KPI Engine
 ```
 
-## Run locally
+## Run locally (single command flow)
 ```bash
 python -m venv .venv
 source .venv/bin/activate
@@ -32,14 +32,24 @@ pip install -r requirements.txt
 uvicorn geogreen.api.main:app --reload
 ```
 
-## API
-- `GET /health`
-- `GET /analysis/{city_name}`
+Then open:
+- UI Dashboard: `http://127.0.0.1:8000/`
+- API Health: `http://127.0.0.1:8000/health`
+- Analysis API: `http://127.0.0.1:8000/analysis/Bangalore`
 
-Example:
-```bash
-curl http://127.0.0.1:8000/analysis/Bangalore
-```
+## What you get in the UI
+- Search bar for city input
+- KPI cards:
+  - Tree count estimate
+  - Tree density
+  - Urban %, Cropland %, Barren %
+- Environmental insight scores:
+  - Heat Impact Index
+  - Water Retention Index
+  - Green Coverage Score
+  - Climate Risk Indicator
+  - Urban Stress Score
+- Land-distribution visual bars (tree/crop/urban/barren)
 
 ## Implementation notes
 - The core abstraction is `get_city_analysis(city_name: str)` in `geogreen/core/engine.py`.
